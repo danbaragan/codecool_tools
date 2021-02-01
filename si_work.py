@@ -3,9 +3,11 @@
 from dotenv import load_dotenv
 load_dotenv()
 import argparse
+import concurrent.futures
 import os
 from pprint import pprint as pp
 
+import colorama
 from colorama import Fore, Back, Style
 from agithub.GitHub import GitHub
 
@@ -13,8 +15,23 @@ from lib.project_namer import PgProjectNamer, print_projects
 from lib.data_reader import Reader
 
 
-
 hub_client = GitHub(token=os.getenv('TOKEN'))
+
+
+def get_commits_activity_from_github(project):
+    # https://docs.github.com/en/rest/reference/repos#get-a-repository
+
+    # this will go to the default branch == development; what if all their code is on master? or main?
+    # feed `sha=master` to get() to specify other branch than default
+    status, resp = hub_client.repos.CodecoolGlobal[project].commits.get()
+    activity = resp  # in case none of the below - assume it is some error inside the response
+
+    if status == 404:
+        activity = -1
+    elif status == 200:
+        activity = len(resp)
+    return activity
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='si_work.py',
@@ -29,6 +46,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    # noop for anything but windows...
+    colorama.init()
     namer = PgProjectNamer(args.type, args.week)
 
     students = []
@@ -41,20 +60,34 @@ if __name__ == '__main__':
         print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:')
         for student in students:
             print(f'{Fore.YELLOW}{student["name"]}{Style.RESET_ALL}:')
+
+            student_projects = []
             for prj in namer.cycle_names(week):
                 project = f'{prj}-{student["github"]}'
-                # https://docs.github.com/en/rest/reference/repos#get-a-repository
-                status, resp = hub_client.repos.CodecoolGlobal[project].commits.get()
+                student_projects.append(project)
 
-                activity = 'err'
-                if status == 404:
-                    activity = f'{Fore.RED}repo not started{Style.RESET_ALL}'
-                elif status == 200:
-                    commits_no = len(resp)
-                    if commits_no <= 1:
-                        activity = f'{Fore.RED}{commits_no}{Style.RESET_ALL}'
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_url = {executor.submit(get_commits_activity_from_github, prj): prj for prj in student_projects}
+
+                for future_activity in concurrent.futures.as_completed(future_to_url):
+                    project = future_to_url[future_activity]
+                    try:
+                        activity = future_activity.result()
+                    except Exception as e:
+                        activity = str(e)
+
+                    if activity == -1:
+                        activity_str = f'{Fore.RED}repo not started{Style.RESET_ALL}'
+                    elif activity <= 1:
+                        activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+                    elif activity > 1:
+                        activity_str = f'{Fore.GREEN}{activity}{Style.RESET_ALL}'
                     else:
-                        activity = f'{Fore.GREEN}{commits_no}{Style.RESET_ALL}'
-                
-                print(f'{project}: {activity}')
+                        activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+
+                    print(f'{project}: {activity_str}')
         print()
+
+    # Don't mind improper program exit - this will just let windows consoles in a messed up state
+    # but windows users close consoles on sight so it's cheaper for the code complexity to leave that out
+    colorama.deinit()
