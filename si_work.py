@@ -5,7 +5,9 @@ load_dotenv()
 import argparse
 import concurrent.futures
 import os
+from pathlib import Path
 from pprint import pprint as pp
+import sys
 
 import colorama
 from colorama import Fore, Back, Style
@@ -15,13 +17,15 @@ from lib.project_namer import PgProjectNamer, print_projects
 from lib.data_reader import Reader
 
 
+DATA_FILE = Path('data') / 'students.csv'
+
 hub_client = GitHub(token=os.getenv('TOKEN'))
 
 
 def get_commits_activity_from_github(project):
     # https://docs.github.com/en/rest/reference/repos#get-a-repository
 
-    # this will go to the default branch == development; what if all their code is on master? or main?
+    # TODO this will go to the default branch == development; what if all their code is on master? or main?
     # feed `sha=master` to get() to specify other branch than default
     status, resp = hub_client.repos.CodecoolGlobal[project].commits.get()
     activity = resp  # in case none of the below - assume it is some error inside the response
@@ -37,14 +41,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='si_work.py',
     description=f"""Show what work in terms of commits sudets did during their SI week
     """,
-    epilog="You should have ?.csv file with... ")
+    epilog="You should have data/students.csv file with a header like `name,github`")
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
-    parser.add_argument('week', type=int, nargs='?', choices=[1, 2, 3, 4, 5, 6], default=None,
+    parser.add_argument('week', type=int, nargs='?',
+        choices=[1, 2, 3, 4, 5, 6], default=None,
         help='Week number to show; All if empty; default empty')
 
     args = parser.parse_args()
+    # data_path = Path(DATA_FILE)
+    if not DATA_FILE.exists():
+        print(f'No {DATA_FILE} found!\n\n')
+        parser.print_help()
+        sys.exit(-1)
 
     # noop for anything but windows...
     colorama.init()
@@ -52,7 +62,7 @@ if __name__ == '__main__':
 
     students = []
     # Expecting a csv of form: name,github
-    with Reader('data/students.csv') as rd:
+    with Reader(DATA_FILE, has_header=True) as rd:
         for row in rd:
             students.append(row)
 
@@ -86,6 +96,7 @@ if __name__ == '__main__':
                         activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
 
                     print(f'{project}: {activity_str}')
+            print()
         print()
 
     # Don't mind improper program exit - this will just let windows consoles in a messed up state
