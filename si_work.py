@@ -13,11 +13,9 @@ import colorama
 from colorama import Fore, Back, Style
 from agithub.GitHub import GitHub
 
-from lib.project_namer import PgProjectNamer, print_projects
+from lib.project_namer import namer_factory, print_projects
 from lib.data_reader import Reader
 
-
-DATA_FILE = Path('data') / 'students.csv'
 
 hub_client = GitHub(token=os.getenv('TOKEN'))
 
@@ -41,28 +39,32 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='si_work.py',
     description=f"""Show what work in terms of commits sudets did during their SI week
     """,
-    epilog="You should have data/students.csv file with a header like `name,github`")
+    epilog="""You should have data/<module>_students.csv file with a header like `name,github`;
+    e.g. for oop module, have data/oop_students.csv""")
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
+    parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oop', 'adv'],
+        help='module we inquire repo information from')
     parser.add_argument('week', type=int, nargs='?',
         choices=[1, 2, 3, 4, 5, 6], default=None,
         help='Week number to show; All if empty; default empty')
 
     args = parser.parse_args()
-    # data_path = Path(DATA_FILE)
-    if not DATA_FILE.exists():
-        print(f'No {DATA_FILE} found!\n\n')
+    data_file = Path('data') / f'{args.module[0]}_students.csv'
+    if not data_file.exists():
+        print(f'No {data_file} found!\n\n')
         parser.print_help()
         sys.exit(-1)
 
+    namer = namer_factory(args.module[0])(args.type, args.week)
+
     # noop for anything but windows...
     colorama.init()
-    namer = PgProjectNamer(args.type, args.week)
 
     students = []
     # Expecting a csv of form: name,github
-    with Reader(DATA_FILE, has_header=True) as rd:
+    with Reader(data_file, has_header=True) as rd:
         for row in rd:
             students.append(row)
 

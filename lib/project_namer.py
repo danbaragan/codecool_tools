@@ -32,7 +32,7 @@ class ProjectNamer:
         return self.WEEK_NAME[self.week_type]
 
 
-class PgProjectNamer(ProjectNamer):
+class PbProjectNamer(ProjectNamer):
     SI_PROJECT_NAMES = [
         [],
         ['git-started-general', 'lets-get-qualified-general', 'setup-python-general',
@@ -62,11 +62,52 @@ class PgProjectNamer(ProjectNamer):
         'tw': TW_PROJECT_NAMES,
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+class WebProjectNamer(ProjectNamer):
+    SI_PROJECT_NAMES = [
+        ['onboarding-web-general', 'curling-general', 'flask-note-python',
+         'request-counter-python', 'super-sprinter-3000-python'],
+        ['setup-postgresql-python', 'application-process-python',
+         'python-on-steroids-python', 'css-layouts-general'],
+        ['codewars-sql-7-kyu-general', 'northwind-traders-python',
+         'syringe-python', 'flying-circus-python', 'branched-off-general'],
+        ['multi-color-buttons-javascript', 'minesweeper-javascript',
+         'codewars-javascript-7-kyu-general', 'deface-general',
+         'metamorphosis-javascript', 'step-by-step-python'],
+        ['callback-hell-javascript', 'untrusted-javascript',
+         'color-picker-javascript', 'api-wars-python',],
+        ['codecool-series-python', 'html-formatter-general',
+         'api-wars-deployment-general', 'codewars-javascript-6-kyu-general',
+         'codewars-sql-6-kyu-general', 'responsive-rainbow-general'],
+    ]
+    TW_PROJECT_NAMES = [
+        ['ask-mate-1-python'],
+        ['agile-general', 'ask-mate-2-python'],
+        ['ask-mate-3-python'],
+        ['freestyle-javascript-game-javascript', 'code-taboo-sorting-javascript'],
+        ['proman-1-python'],
+        ['proman-2-python'],
+    ]
+    WEEK_NAME = {
+        'si': 'Web SI',
+        'tw': 'Web TW',
+    }
+    PROJECT_NAMES = {
+        'si': SI_PROJECT_NAMES,
+        'tw': TW_PROJECT_NAMES,
+    }
 
 
 ### helpers
+
+def namer_factory(module):
+    if module == 'pb':
+        return PbProjectNamer
+    elif module == 'web':
+        return WebProjectNamer
+    else:
+        raise NotImplementedError
+
 
 def print_projects(namer, github_account=None):
     for week in namer.cycle_weeks():
