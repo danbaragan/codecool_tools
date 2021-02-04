@@ -36,11 +36,13 @@ def get_commits_activity_from_github(project):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='si_work.py',
-    description=f"""Show what work in terms of commits sudets did during their SI week
-    """,
-    epilog="""You should have data/<module>_students.csv file with a header like `name,github`;
-    e.g. for oop module, have data/oop_students.csv""")
+    script_name = Path(__file__).stem
+    script_name_ext = Path(__file__).name
+    parser = argparse.ArgumentParser(prog=script_name_ext,
+    description="""Show what work in terms of commits sudets did during their SI week""",
+    epilog=f"""You should have data/{script_name}_si_work_<module>_students.csv file
+    with a header like `name,github`;
+    e.g. for oop module, have data/{script_name}_oop_students.csv""")
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
@@ -51,7 +53,7 @@ if __name__ == '__main__':
         help='Week number to show; All if empty; default empty')
 
     args = parser.parse_args()
-    data_file = Path('data') / f'{args.module[0]}_students.csv'
+    data_file = Path('data') / f'{script_name}_{args.module[0]}_students.csv'
     if not data_file.exists():
         print(f'No {data_file} found!\n\n')
         parser.print_help()

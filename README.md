@@ -5,6 +5,7 @@ These scripts are ment to automate interaction with github as a mentor in order 
 - python 3 (3.9 was used)
 - pip install requirements.txt
 - github [token](https://github.com/settings/tokens) to put in .env file
+- rename the needed templates inside data/ folder
 
 ## Usage
 
