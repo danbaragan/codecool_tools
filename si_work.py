@@ -42,11 +42,11 @@ if __name__ == '__main__':
     description="""Show what work in terms of commits sudets did during their SI week""",
     epilog=f"""You should have data/{script_name}_si_work_<module>_students.csv file
     with a header like `name,github`;
-    e.g. for oop module, have data/{script_name}_oop_students.csv""")
+    e.g. for oop Java module, have data/{script_name}_oopj_students.csv""")
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
-    parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oop', 'adv'],
+    parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
     parser.add_argument('week', type=int, nargs='?',
         choices=[1, 2, 3, 4, 5, 6], default=None,

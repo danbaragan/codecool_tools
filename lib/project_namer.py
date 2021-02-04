@@ -98,6 +98,65 @@ class WebProjectNamer(ProjectNamer):
     }
 
 
+class OopjProjectNamer(ProjectNamer):
+    SI_PROJECT_NAMES = [
+        ['onboarding-oop-general', 'setup-java-general', 'hello-world-oop-java',
+         'five-in-a-row-java', 'codewars-java-7-kyu-general', 'street-writer-java',
+         'enigma-java'],
+        ['car-race-java', 'geometry-java', 'waste-recycling-java', 'rewrite-dynamic-array-java',
+         'build-your-builder-java', 'codewars-java-6-kyu-general'],
+        ['planning-motors-general', 'rewrite-linkedlist-java',
+         'history-java', 'life-of-the-ants-java'],
+        ['histogram-java', 'book-db-java', 'rewrite-hashtable-java',
+         'wardrobe-java', 'codecoolers-everywhere-python'],
+        ['hacker-news-java', 'kitchen-helpers-java', 'stock-trader-java'],
+        ['six-handshakes-java', 'gladiator-java', 'polyglot-club-general', 'fibonacci-variants-java'],
+    ]
+    TW_PROJECT_NAMES = [
+        ['remake-progbasics-game-java'],
+        ['process-watch-java'],
+        ['dungeon-crawl-1-java'],
+        ['dungeon-crawl-2-java'],
+        ['codecool-shop-1-java'],
+        ['codecool-shop-2-java'],
+    ]
+    WEEK_NAME = {
+        'si': 'OOP/Java SI',
+        'tw': 'OOP/Java TW',
+    }
+    PROJECT_NAMES = {
+        'si': SI_PROJECT_NAMES,
+        'tw': TW_PROJECT_NAMES,
+    }
+
+
+class AdvProjectNamer(ProjectNamer):
+    SI_PROJECT_NAMES = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ]
+    TW_PROJECT_NAMES = [
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    ]
+    WEEK_NAME = {
+        'si': 'OOP SI',
+        'tw': 'OOP TW',
+    }
+    PROJECT_NAMES = {
+        'si': SI_PROJECT_NAMES,
+        'tw': TW_PROJECT_NAMES,
+    }
+
+
 ### helpers
 
 def namer_factory(module):
@@ -105,6 +164,10 @@ def namer_factory(module):
         return PbProjectNamer
     elif module == 'web':
         return WebProjectNamer
+    elif module == 'oopj':
+        return OopjProjectNamer
+    elif module == 'adv':
+        raise NotImplementedError
     else:
         raise NotImplementedError
 
