@@ -46,6 +46,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
+    parser.add_argument('-d', '--display', choices=['lines', 'table'], default='lines',
+        help='display results; line by line or in a table; default: lines')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
     parser.add_argument('week', type=int, nargs='?',
@@ -70,16 +72,29 @@ if __name__ == '__main__':
         for row in rd:
             students.append(row)
 
+    header_base = ['Name', 'github']
     for week in namer.cycle_weeks():
-        print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:')
-        for student in students:
-            print(f'{Fore.YELLOW}{student["name"]}{Style.RESET_ALL}:')
+        print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:\n')
 
+        header = header_base + list(namer.cycle_names(week))
+        if args.display == 'table':
+            header_str = f'{header[0]:^20}{header[1]:^12}'
+            for h in header[2:]:
+                header_str += f'{h:^25}'
+            print(header_str)
+
+        for student in students:
+            if args.display == 'lines':
+                print(f'{Fore.YELLOW}{student["name"]}{Style.RESET_ALL}:')
+
+            student_repos_activity = {}
+            student_repos_activity_strs = {}
             project_name2repo = {}
             for prj in namer.cycle_names(week):
                 project = f'{prj}-{student["github"]}'
                 project_name2repo[prj] = project
-            student_repos_activity = {name:-1 for name in project_name2repo}
+                student_repos_activity[prj] = -1
+                student_repos_activity_strs[prj] = ''
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {
@@ -101,16 +116,26 @@ if __name__ == '__main__':
             for project, activity in student_repos_activity.items():
                 project_repo = project_name2repo[project]
                 if activity == -1:
-                    activity_str = f'{Fore.RED}repo not started{Style.RESET_ALL}'
+                    not_started = 'not started'
+                    activity_str = f'{Fore.RED}{not_started:^25}{Style.RESET_ALL}'
                 elif activity <= 1:
-                    activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
                 elif activity > 1:
-                    activity_str = f'{Fore.GREEN}{activity}{Style.RESET_ALL}'
+                    activity_str = f'{Fore.GREEN}{activity:^25}{Style.RESET_ALL}'
                 else:
-                    activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
 
-                print(f'{project_repo}: {activity_str}')
-            print()
+                if args.display == 'lines':
+                    print(f'{project_repo:<50}{activity_str}')
+                elif args.display == 'table':
+                    student_repos_activity_strs[project] = activity_str
+            if args.display == 'table':
+                row_str = f'{Fore.YELLOW}{student["name"]:<20}{Style.RESET_ALL}{student["github"]:^12}'
+                for prj, activity in student_repos_activity_strs.items():
+                    row_str += activity
+                print(row_str)
+            if args.display == 'lines':
+                print()
         print()
 
     # Don't mind improper program exit - this will just let windows consoles in a messed up state
