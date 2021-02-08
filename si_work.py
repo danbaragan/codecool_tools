@@ -66,27 +66,27 @@ def process_batch(project2repo):
     return student_repos_activity
 
 
-def get_activity_str(activity):
+def get_activity_str(activity, width):
     activity_str = 'unknown err'
-    activity_str = f'{Fore.RED}{activity_str:^25}{Style.RESET_ALL}'
+    activity_str = f'{Fore.RED}{activity_str:^{width}}{Style.RESET_ALL}'
     if type(activity) is str:
-        activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
+        activity_str = f'{Fore.RED}{activity:^{width}}{Style.RESET_ALL}'
     elif activity == -1:
         not_started = 'not started'
-        activity_str = f'{Fore.RED}{not_started:^25}{Style.RESET_ALL}'
+        activity_str = f'{Fore.RED}{not_started:^{width}}{Style.RESET_ALL}'
     elif activity <= 1:
-        activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
+        activity_str = f'{Fore.RED}{activity:^{width}}{Style.RESET_ALL}'
     elif activity > 1:
-        activity_str = f'{Fore.GREEN}{activity:^25}{Style.RESET_ALL}'
+        activity_str = f'{Fore.GREEN}{activity:^{width}}{Style.RESET_ALL}'
 
     return activity_str
 
 
-def get_table_header_str(projects):
+def get_table_header_str(projects, width):
     header = ['Name', 'github'] + projects
     header_str = f'{header[0]:^20}{header[1]:^12}'
     for h in header[2:]:
-        header_str += f'{h:^25}'
+        header_str += f'{h:^{width}}'
     return header_str
 
 def get_table_row_str(name, github, student_repos_activity_strs):
@@ -142,10 +142,17 @@ if __name__ == '__main__':
             students.append(row)
 
     for week in namer.cycle_weeks():
+        width = 25
         if args.display in ['lines', 'table']:
             print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:\n')
         if args.display == 'table':
-            header_str = get_table_header_str(list(namer.cycle_names(week)))
+            project_names = list(namer.cycle_names(week))
+            # if there are 2 adiacent max length proj names, the column will touch
+            # and be hard to copy paste.
+            # still I'd rather leave it like this
+            # and save that extra space to fit as much as possible on one row
+            width = max(map(len, project_names))
+            header_str = get_table_header_str(project_names, width)
             print(header_str)
 
         for student in students:
@@ -158,7 +165,7 @@ if __name__ == '__main__':
             # Dispaly them in the order of the initial dict keys
             student_repos_activity_strs = {}
             for project, activity in student_repos_activity.items():
-                activity_str = get_activity_str(activity)
+                activity_str = get_activity_str(activity, width)
                 if args.display == 'lines':  # print the project line directly
                     print(f'{project2repo[project]:<50}{activity_str}')
                 elif args.display == 'table':  # gather the project activities to be printed on a single line
