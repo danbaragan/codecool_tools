@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from logging import disable
 from dotenv import load_dotenv
 load_dotenv()
 import argparse
@@ -43,6 +44,59 @@ def get_commits_activity_from_github(project):
     return activity
 
 
+def process_batch(project2repo):
+    # create a dict with  repo_base_name -> activity in the proper order
+    student_repos_activity = {prj:-1 for prj in project2repo}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_url = {
+            executor.submit(get_commits_activity_from_github, project2repo[prj_name]):
+            prj_name for prj_name in project2repo
+        }
+
+        futures = concurrent.futures.as_completed(future_to_url, timeout=6)
+        # Gather this in any order but write them to the dict with insertion ordered keys
+        for future_activity in futures:
+            project = future_to_url[future_activity]
+            try:
+                activity = future_activity.result()
+            except Exception as e:
+                activity = str(e)
+            student_repos_activity[project] = activity
+    
+    return student_repos_activity
+
+
+def get_activity_str(activity):
+    activity_str = 'unknown err'
+    activity_str = f'{Fore.RED}{activity_str:^25}{Style.RESET_ALL}'
+    if type(activity) is str:
+        activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
+    elif activity == -1:
+        not_started = 'not started'
+        activity_str = f'{Fore.RED}{not_started:^25}{Style.RESET_ALL}'
+    elif activity <= 1:
+        activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
+    elif activity > 1:
+        activity_str = f'{Fore.GREEN}{activity:^25}{Style.RESET_ALL}'
+
+    return activity_str
+
+
+def get_table_header_str(projects):
+    header = ['Name', 'github'] + projects
+    header_str = f'{header[0]:^20}{header[1]:^12}'
+    for h in header[2:]:
+        header_str += f'{h:^25}'
+    return header_str
+
+def get_table_row_str(name, github, student_repos_activity_strs):
+    row_str = f'{Fore.YELLOW}{name:<20}{Style.RESET_ALL}{github:^12}'
+    for activity in student_repos_activity_strs.values():
+        row_str += activity
+
+    return row_str
+
+
 if __name__ == '__main__':
     script_name = Path(__file__).stem
     script_name_ext = Path(__file__).name
@@ -80,73 +134,34 @@ if __name__ == '__main__':
         for row in rd:
             students.append(row)
 
-    header_base = ['Name', 'github']
     for week in namer.cycle_weeks():
-        print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:\n')
-
-        header = header_base + list(namer.cycle_names(week))
+        if args.display in ['lines', 'table']:
+            print(f'Projects for {Fore.YELLOW}{namer.module_name}{week+1}{Style.RESET_ALL}:\n')
         if args.display == 'table':
-            header_str = f'{header[0]:^20}{header[1]:^12}'
-            for h in header[2:]:
-                header_str += f'{h:^25}'
+            header_str = get_table_header_str(list(namer.cycle_names(week)))
             print(header_str)
 
         for student in students:
             if args.display == 'lines':
                 print(f'{Fore.YELLOW}{student["name"]}{Style.RESET_ALL}:')
 
-            student_repos_activity = {}
-            student_repos_activity_strs = {}
-            project_name2repo = {}
-            for prj in namer.cycle_names(week):
-                project = f'{prj}-{student["github"]}'
-                project_name2repo[prj] = project
-                student_repos_activity[prj] = -1
-                student_repos_activity_strs[prj] = ''
-
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-                future_to_url = {
-                    executor.submit(get_commits_activity_from_github, project_name2repo[prj_name]):
-                    prj_name for prj_name in project_name2repo
-                }
-
-                futures = concurrent.futures.as_completed(future_to_url, timeout=6)
-                # Gather this in any order but write them to the dict with insertion ordered keys
-                for future_activity in futures:
-                    project = future_to_url[future_activity]
-                    try:
-                        activity = future_activity.result()
-                    except Exception as e:
-                        activity = str(e)
-                    student_repos_activity[project] = activity
+            project2repo = {prj:f'{prj}-{student["github"]}' for prj in namer.cycle_names(week)}
+            student_repos_activity = process_batch(project2repo)
 
             # Dispaly them in the order of the initial dict keys
+            student_repos_activity_strs = {}
             for project, activity in student_repos_activity.items():
-                project_repo = project_name2repo[project]
-
-                activity_str = 'unknown err'
-                activity_str = f'{Fore.RED}{activity_str:^25}{Style.RESET_ALL}'
-                if type(activity) is str:
-                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
-                elif activity == -1:
-                    not_started = 'not started'
-                    activity_str = f'{Fore.RED}{not_started:^25}{Style.RESET_ALL}'
-                elif activity <= 1:
-                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
-                elif activity > 1:
-                    activity_str = f'{Fore.GREEN}{activity:^25}{Style.RESET_ALL}'
-
-                if args.display == 'lines':
-                    print(f'{project_repo:<50}{activity_str}')
-                elif args.display == 'table':
+                activity_str = get_activity_str(activity)
+                if args.display == 'lines':  # print the project line directly
+                    print(f'{project2repo[project]:<50}{activity_str}')
+                elif args.display == 'table':  # gather the project activities to be printed on a single line
                     student_repos_activity_strs[project] = activity_str
-            if args.display == 'table':
-                row_str = f'{Fore.YELLOW}{student["name"]:<20}{Style.RESET_ALL}{student["github"]:^12}'
-                for prj, activity in student_repos_activity_strs.items():
-                    row_str += activity
-                print(row_str)
+
             if args.display == 'lines':
                 print()
+            if args.display == 'table':
+                row_str = get_table_row_str(student["name"], student["github"], student_repos_activity_strs)
+                print(row_str)
         print()
 
     # Don't mind improper program exit - this will just let windows consoles in a messed up state
