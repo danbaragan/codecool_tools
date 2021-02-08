@@ -19,7 +19,6 @@ from lib.data_reader import Reader
 
 hub_client = GitHub(token=os.getenv('TOKEN'))
 
-
 def get_commits_activity_from_github(project):
     # https://docs.github.com/en/rest/reference/repos#get-a-repository
 
@@ -32,6 +31,15 @@ def get_commits_activity_from_github(project):
         activity = -1
     elif status == 200:
         activity = len(resp)
+    elif status == 401:
+        print(f'{Fore.RED}{resp["message"]}{Style.RESET_ALL}')
+        # we bail out from a thread in the name of the entire process!
+        sys.exit(1)
+    elif status == 403:
+        raise PermissionError(resp['message'])
+    else:
+        raise RuntimeError(resp)
+
     return activity
 
 
@@ -115,15 +123,18 @@ if __name__ == '__main__':
             # Dispaly them in the order of the initial dict keys
             for project, activity in student_repos_activity.items():
                 project_repo = project_name2repo[project]
-                if activity == -1:
+
+                activity_str = 'unknown err'
+                activity_str = f'{Fore.RED}{activity_str:^25}{Style.RESET_ALL}'
+                if type(activity) is str:
+                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
+                elif activity == -1:
                     not_started = 'not started'
                     activity_str = f'{Fore.RED}{not_started:^25}{Style.RESET_ALL}'
                 elif activity <= 1:
                     activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
                 elif activity > 1:
                     activity_str = f'{Fore.GREEN}{activity:^25}{Style.RESET_ALL}'
-                else:
-                    activity_str = f'{Fore.RED}{activity:^25}{Style.RESET_ALL}'
 
                 if args.display == 'lines':
                     print(f'{project_repo:<50}{activity_str}')
