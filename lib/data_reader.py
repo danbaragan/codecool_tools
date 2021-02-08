@@ -29,5 +29,5 @@ class Reader:
 
 
     def __iter__(self):
-        self._it = csv.DictReader(self._in_file)
+        self._it = csv.DictReader(filter(lambda row: row[0] != '#', self._in_file))
         return self._it
