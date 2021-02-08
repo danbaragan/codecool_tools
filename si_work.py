@@ -75,36 +75,41 @@ if __name__ == '__main__':
         for student in students:
             print(f'{Fore.YELLOW}{student["name"]}{Style.RESET_ALL}:')
 
-            student_projects = {}
+            project_name2repo = {}
             for prj in namer.cycle_names(week):
                 project = f'{prj}-{student["github"]}'
-                student_projects[prj] = project
+                project_name2repo[prj] = project
+            student_repos_activity = {name:-1 for name in project_name2repo}
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
                 future_to_url = {
-                    executor.submit(get_commits_activity_from_github, student_projects[prj_name]):
-                    prj_name for prj_name in student_projects
+                    executor.submit(get_commits_activity_from_github, project_name2repo[prj_name]):
+                    prj_name for prj_name in project_name2repo
                 }
 
-                futures = concurrent.futures.wait(future_to_url, timeout=6)
-                for future_activity in futures.done:
+                futures = concurrent.futures.as_completed(future_to_url, timeout=6)
+                # Gather this in any order but write them to the dict with insertion ordered keys
+                for future_activity in futures:
                     project = future_to_url[future_activity]
-                    project_repo = student_projects[project]
                     try:
                         activity = future_activity.result()
                     except Exception as e:
                         activity = str(e)
+                    student_repos_activity[project] = activity
 
-                    if activity == -1:
-                        activity_str = f'{Fore.RED}repo not started{Style.RESET_ALL}'
-                    elif activity <= 1:
-                        activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
-                    elif activity > 1:
-                        activity_str = f'{Fore.GREEN}{activity}{Style.RESET_ALL}'
-                    else:
-                        activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+            # Dispaly them in the order of the initial dict keys
+            for project, activity in student_repos_activity.items():
+                project_repo = project_name2repo[project]
+                if activity == -1:
+                    activity_str = f'{Fore.RED}repo not started{Style.RESET_ALL}'
+                elif activity <= 1:
+                    activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
+                elif activity > 1:
+                    activity_str = f'{Fore.GREEN}{activity}{Style.RESET_ALL}'
+                else:
+                    activity_str = f'{Fore.RED}{activity}{Style.RESET_ALL}'
 
-                    print(f'{project_repo}: {activity_str}')
+                print(f'{project_repo}: {activity_str}')
             print()
         print()
 
