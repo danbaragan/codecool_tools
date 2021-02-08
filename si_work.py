@@ -113,9 +113,9 @@ def setup_args_parser(script_name):
         help='display results; line by line or in a table; default: lines')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
-    parser.add_argument('week', type=int, nargs='?',
-        choices=[1, 2, 3, 4, 5, 6], default=None,
-        help='Week number to show; All if empty; default empty')
+    parser.add_argument('weeks', type=int, nargs='+',
+        choices=[1, 2, 3, 4, 5, 6],
+        help='Week numbers to show')
 
     return parser
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit(-1)
 
-    namer = namer_factory(args.module[0])(args.type, args.week)
+    namer = namer_factory(args.module[0])(args.type, args.weeks)
     # noop for anything but windows...
     colorama.init()
 

@@ -4,23 +4,14 @@ from colorama import Fore, Back, Style
 class ProjectNamer:
     week_type = 'si'
 
-    def __init__(self, week_type='si', week_number=None):
-        if week_number is not None:
-            if not 1 <= week_number <= 6:
-                raise ValueError(f'Choose a week between 1 and 6')
-            self.week_number = week_number - 1
-        else:
-            self.week_number = None  # all weeks
-        
+    def __init__(self, week_type, week_numbers):
+        self.week_numbers = [n-1 for n in week_numbers]
         self.week_type = week_type
 
 
     def cycle_weeks(self):
-        if self.week_number is not None:
-            yield self.week_number
-        else:
-            yield from range(6)
-
+        for n in self.week_numbers:
+            yield n
 
     def cycle_names(self, week):
         names_by_week = self.PROJECT_NAMES[self.week_type]
