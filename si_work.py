@@ -109,8 +109,8 @@ def setup_args_parser(script_name):
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
-    parser.add_argument('-d', '--display', choices=['lines', 'table'], default='lines',
-        help='display results; line by line or in a table; default: lines')
+    parser.add_argument('-d', '--display', choices=['lines', 'table'], default='table',
+        help='display results; line by line or in a table; default: table')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
     parser.add_argument('weeks', type=int, nargs='+',
