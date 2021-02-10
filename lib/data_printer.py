@@ -1,3 +1,6 @@
+import csv
+from pathlib import Path
+
 import colorama
 from colorama import Fore, Back, Style
 
@@ -6,7 +9,7 @@ from colorama import Fore, Back, Style
 # While some of the modules in lib could be reused, I doubt this will
 # thus placing in here is unfortunate; but I don't want to clobber the script file itself
 class Printer:
-    BASE_HEADER = ['Name', 'github']
+    BASE_HEADER = ['name', 'github']
     BASE_WIDTHS = [20, 12]
 
     def __init__(self):
@@ -24,8 +27,16 @@ class Printer:
     def header(self, *args, **kwargs):
         pass
 
-    def student_cell(self, *args, **kwargs):
-        pass
+    def student_cell(self, name, github, *args):
+        self.student_name = name
+        self.student_github = github
+
+    def activity_cell(self, project, activity):
+        self.student_activities[project] = self._activity2str(activity)
+
+    def flush_row(self):
+        self.student_activities = {}
+        self.student_name = self.student_github = ''
 
 
 class TtyPrinter(Printer):
@@ -59,7 +70,7 @@ class TtyPrinter(Printer):
 
 
 class LinePrinter(TtyPrinter):
-    def student_cell(self, name):
+    def student_cell(self, name, *args):
         print(f'{Fore.YELLOW}{name}{Style.RESET_ALL}:')
 
 
@@ -87,30 +98,72 @@ class TablePrinter(TtyPrinter):
         print(header_str)
 
 
-    def activity_cell(self, project, activity):
-        self.student_activities[project] = self._activity2str(activity)
-
-
-    def flush_row(self, name, github):
+    def flush_row(self):
         # reset the student activities for this row
-        row_str = f'{Fore.YELLOW}{name:<{self.BASE_WIDTHS[0]}}{Style.RESET_ALL}{github:^{self.BASE_WIDTHS[1]}}'
+        row_str = (f'{Fore.YELLOW}{self.student_name:<{self.BASE_WIDTHS[0]}}'
+                   f'{Style.RESET_ALL}{self.student_github:^{self.BASE_WIDTHS[1]}}')
         for activity in self.student_activities.values():
             row_str += activity
         print(row_str)
-        self.student_activities = {}
+        super().flush_row()
 
 
 class CsvPrinter(Printer):
-    pass
+    BASE_HEADER = ['module', 'week'] + Printer.BASE_HEADER
+
+    def __init__(self, script_name):
+        super().__init__()
+        self.out_path = Path('data') / f'{script_name}_out.csv'
 
 
+    def __enter__(self):
+        if self.out_path.exists():
+            self.out_path.rename(str(self.out_path) + '.old')
+        self.out_file = open(self.out_path, "w")
+        self.csv = csv.writer(self.out_file)
+        return self
+
+
+    def __exit__(self, type, value, traceback):
+        self.out_file.close()
+        print(f'{self.out_path} written')
+
+
+    def module_line(self, name, week):
+        self.module = name
+        self.week = week
+
+
+    # this is not an actual csv header, but a line that repeats every time week changes and thus project names
+    def header(self, project_names):
+        row = self.BASE_HEADER + project_names
+        self.csv.writerow(row)
+
+
+    def flush_row(self):
+        row = [self.module, self.week, self.student_name, self.student_github]
+        row.extend(self.student_activities.values())
+        self.csv.writerow(row)
+        super().flush_row()
+
+
+    def _activity2str(self, activity):
+        activity_str = 'unknown err'
+        if activity == -1:
+            activity_str = 'not started'
+        elif activity == 1:
+            activity_str = 'none'
+        elif type(activity) in [int, str]:
+            activity_str = activity
+
+        return activity_str
 
 ### helpers
 
-def printer_factory(display):
+def printer_factory(display, script_name):
     if display == 'lines':
-        return LinePrinter
+        return LinePrinter()
     elif display == 'table':
-        return TablePrinter
+        return TablePrinter()
     elif display == 'csv':
-        raise NotImplementedError
+        return CsvPrinter(Path(script_name).stem)

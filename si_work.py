@@ -11,7 +11,7 @@ import sys
 from colorama import Fore, Style
 from agithub.GitHub import GitHub
 
-from lib.project_namer import namer_factory
+from lib.project_namer import namer_class_factory
 from lib.data_printer import printer_factory
 from lib.data_reader import Reader
 
@@ -77,7 +77,7 @@ def setup_args_parser(script_name):
 
     parser.add_argument('-t', '--type', choices=['si', 'tw'], default='si',
         help='week type; si or tw; default si')
-    parser.add_argument('-d', '--display', choices=['lines', 'table'], default='table',
+    parser.add_argument('-d', '--display', choices=['lines', 'table', 'csv'], default='table',
         help='display results; line by line or in a table; default: table')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit(-1)
 
-    namer = namer_factory(args.module[0])(args.type, args.weeks)
+    namer = namer_class_factory(args.module[0])(args.type, args.weeks)
 
     students = []
     # Expecting a csv of form: name,github
@@ -107,8 +107,8 @@ if __name__ == '__main__':
         for row in rd:
             students.append(row)
 
-    printer_class = printer_factory(args.display)
-    with printer_class() as printer:
+    printer = printer_factory(args.display, __file__)
+    with printer as printer:
         for week in namer.cycle_weeks():
             printer.module_line(namer.module_name, week)
 
@@ -116,14 +116,14 @@ if __name__ == '__main__':
             printer.header(project_names)
 
             for student in students:
-                printer.student_cell(student["name"])
+                printer.student_cell(student["name"], student["github"])
 
                 project2repo = {prj:f'{prj}-{student["github"]}' for prj in project_names}
                 student_repos_activity = process_batch(project2repo)
 
-                # Dispaly them in the order of the initial dict keys
+                # Display them in the order of the initial dict keys
                 for project, activity in student_repos_activity.items():
                     printer.activity_cell(project2repo[project], activity)
 
-                printer.flush_row(student["name"], student["github"])
+                printer.flush_row()
             print()

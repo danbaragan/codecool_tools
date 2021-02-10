@@ -150,7 +150,7 @@ class AdvProjectNamer(ProjectNamer):
 
 ### helpers
 
-def namer_factory(module):
+def namer_class_factory(module):
     if module == 'pb':
         return PbProjectNamer
     elif module == 'web':
