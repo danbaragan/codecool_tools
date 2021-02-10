@@ -113,17 +113,17 @@ if __name__ == '__main__':
             printer.module_line(namer.module_name, week)
 
             project_names = list(namer.cycle_names(week))
-            printer.header(project_names)
+            printer.inter_header(project_names)
 
             for student in students:
-                printer.student_cell(student["name"], student["github"])
+                printer.student_cells(student["name"], student["github"])
 
                 project2repo = {prj:f'{prj}-{student["github"]}' for prj in project_names}
                 student_repos_activity = process_batch(project2repo)
 
                 # Display them in the order of the initial dict keys
                 for project, activity in student_repos_activity.items():
-                    printer.activity_cell(project2repo[project], activity)
+                    printer.activity_cells(project2repo[project], activity)
 
                 printer.flush_row()
             print()

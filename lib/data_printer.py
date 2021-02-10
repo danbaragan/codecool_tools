@@ -24,14 +24,14 @@ class Printer:
     def module_line(self, name, week):
         pass
 
-    def header(self, *args, **kwargs):
+    def inter_header(self, *args, **kwargs):
         pass
 
-    def student_cell(self, name, github, *args):
+    def student_cells(self, name, github, *args):
         self.student_name = name
         self.student_github = github
 
-    def activity_cell(self, project, activity):
+    def activity_cells(self, project, activity):
         self.student_activities[project] = self._activity2str(activity)
 
     def flush_row(self):
@@ -70,11 +70,11 @@ class TtyPrinter(Printer):
 
 
 class LinePrinter(TtyPrinter):
-    def student_cell(self, name, *args):
+    def student_cells(self, name, *args):
         print(f'{Fore.YELLOW}{name}{Style.RESET_ALL}:')
 
 
-    def activity_cell(self, project, activity):
+    def activity_cells(self, project, activity):
         activity_str = self._activity2str(activity)
         print(f'{project:<50}{activity_str}')
 
@@ -86,7 +86,7 @@ class LinePrinter(TtyPrinter):
 
 class TablePrinter(TtyPrinter):
 
-    def header(self, project_names):
+    def inter_header(self, project_names):
         # if there are 2 adiacent max length proj names, the column will touch
         # and be hard to copy paste.
         # still I'd rather leave it like this
@@ -135,7 +135,7 @@ class CsvPrinter(Printer):
 
 
     # this is not an actual csv header, but a line that repeats every time week changes and thus project names
-    def header(self, project_names):
+    def inter_header(self, project_names):
         row = self.BASE_HEADER + project_names
         self.csv.writerow(row)
 
