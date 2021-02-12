@@ -2,11 +2,13 @@ from colorama import Fore, Back, Style
 
 
 class ProjectNamer:
+    NO_COMMITS = []
     week_type = 'si'
 
-    def __init__(self, week_type, week_numbers):
+    def __init__(self, week_type, week_numbers, exclude_no_commits_repos=False):
         self.week_numbers = [n-1 for n in week_numbers]
         self.week_type = week_type
+        self.exclude_no_commit_repos = exclude_no_commits_repos
 
 
     def cycle_weeks(self):
@@ -16,7 +18,8 @@ class ProjectNamer:
     def cycle_names(self, week):
         names_by_week = self.PROJECT_NAMES[self.week_type]
         for prj in names_by_week[week]:
-            yield prj
+            if self.exclude_no_commit_repos and prj not in self.NO_COMMITS:
+                yield prj
 
     @property
     def module_name(self):
@@ -24,6 +27,10 @@ class ProjectNamer:
 
 
 class PbProjectNamer(ProjectNamer):
+    NO_COMMITS = [
+        'lets-get-qualified-general', 'setup-python-general',
+        'gitting-around-general',
+    ]
     SI_PROJECT_NAMES = [
         [],
         ['git-started-general', 'lets-get-qualified-general', 'setup-python-general',
@@ -55,6 +62,13 @@ class PbProjectNamer(ProjectNamer):
 
 
 class WebProjectNamer(ProjectNamer):
+    NO_COMMITS = [
+        'onboarding-web-general', 'curling-general',
+        'css-layouts-general',
+        'codewars-sql-7-kyu-general', 'branched-off-general',
+        'codewars-javascript-7-kyu-general',
+        'api-wars-deployment-general', 'codewars-javascript-6-kyu-general', 'codewars-sql-6-kyu-general'
+    ]
     SI_PROJECT_NAMES = [
         ['onboarding-web-general', 'curling-general', 'flask-note-python',
          'request-counter-python', 'super-sprinter-3000-python'],
@@ -90,6 +104,12 @@ class WebProjectNamer(ProjectNamer):
 
 
 class OopjProjectNamer(ProjectNamer):
+    NO_COMMITS = [
+        'onboarding-oop-general', 'setup-java-general', 'codewars-java-7-kyu-general',
+        'codewars-java-6-kyu-general',
+        'planning-motors-general',
+        'polyglot-club-general',
+    ]
     SI_PROJECT_NAMES = [
         ['onboarding-oop-general', 'setup-java-general', 'hello-world-oop-java',
          'five-in-a-row-java', 'codewars-java-7-kyu-general', 'street-writer-java',

@@ -79,6 +79,8 @@ def setup_args_parser(script_name):
         help='week type; si or tw; default si')
     parser.add_argument('-d', '--display', choices=['lines', 'table', 'csv'], default='table',
         help='display results; line by line or in a table; default: table')
+    parser.add_argument('-A', '--all', action='store_true', default=False,
+        help='show all projects, even the ones that are not supposed to have any further commits')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
         help='module we inquire repo information from')
     parser.add_argument('weeks', type=int, nargs='+',
@@ -99,7 +101,7 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit(-1)
 
-    namer = namer_class_factory(args.module[0])(args.type, args.weeks)
+    namer = namer_class_factory(args.module[0])(args.type, args.weeks, not args.all)
 
     students = []
     # Expecting a csv of form: name,github
