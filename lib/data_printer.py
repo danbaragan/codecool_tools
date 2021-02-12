@@ -10,7 +10,7 @@ from colorama import Fore, Back, Style
 # thus placing in here is unfortunate; but I don't want to clobber the script file itself
 class Printer:
     BASE_HEADER = ['name', 'github']
-    BASE_WIDTHS = [20, 12]
+    BASE_WIDTHS = [22, 16]
 
     def __init__(self):
         self.student_activities = {}
@@ -87,11 +87,7 @@ class LinePrinter(TtyPrinter):
 class TablePrinter(TtyPrinter):
 
     def inter_header(self, project_names):
-        # if there are 2 adiacent max length proj names, the column will touch
-        # and be hard to copy paste.
-        # still I'd rather leave it like this
-        # and save that extra space to fit as much as possible on one row
-        self.width = max(map(len, project_names)) if project_names else 0
+        self.width = max(map(len, project_names)) + 1 if project_names else 0
         header_str = f'{self.BASE_HEADER[0]:^{self.BASE_WIDTHS[0]}}{self.BASE_HEADER[1]:^{self.BASE_WIDTHS[1]}}'
         for h in project_names:
             header_str += f'{h:^{self.width}}'
