@@ -7,6 +7,12 @@ These scripts are ment to automate interaction with github as a mentor in order 
 - github [token](https://github.com/settings/tokens) to put in .env file
 - rename the needed templates inside data/ folder
 
+## Gtihub Token
+
+You need a token with at least the following:
+- workflow (will include everything in repo)
+- admin:org:read:org
+
 ## Usage
 
 Generally, ./<script.py> -h is our friend.
