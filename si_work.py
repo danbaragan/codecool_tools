@@ -11,6 +11,7 @@ import sys
 from colorama import Fore, Style
 from agithub.GitHub import GitHub
 
+from lib.util import batcher
 from lib.project_namer import namer_class_factory
 from lib.data_printer import printer_factory
 from lib.data_reader import Reader
@@ -43,24 +44,27 @@ def get_commits_activity_from_github(project):
     return activity
 
 
-def process_batch(project2repo):
-    # create a dict with  repo_base_name -> activity in the proper order
-    student_repos_activity = {prj:-1 for prj in project2repo}
+def process_batch(student2projects):
+    # create a dict with  [github][repo_base_name] -> activity in the proper order
+    student_repos_activity = {}
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        future_to_url = {
-            executor.submit(get_commits_activity_from_github, project2repo[prj_name]):
-            prj_name for prj_name in project2repo
-        }
+        future_to_url = {}
+        for student, project2repo in student2projects.items():
+            student_repos_activity[student] = {prj:-1 for prj in project2repo}
+            for prj_name in project2repo:
+                f = executor.submit(get_commits_activity_from_github, project2repo[prj_name])
+                future_to_url[f] = (student, prj_name)
 
         futures = concurrent.futures.as_completed(future_to_url, timeout=6)
         # Gather this in any order but write them to the dict with insertion ordered keys
         for future_activity in futures:
-            project = future_to_url[future_activity]
+            student, project = future_to_url[future_activity]
             try:
                 activity = future_activity.result()
             except Exception as e:
                 activity = str(e)
-            student_repos_activity[project] = activity
+            student_repos_activity[student][project] = activity
     
     return student_repos_activity
 
@@ -79,6 +83,8 @@ def setup_args_parser(script_name):
         help='week type; si or tw; default si')
     parser.add_argument('-d', '--display', choices=['lines', 'table', 'csv'], default='table',
         help='display results; line by line or in a table; default: table')
+    parser.add_argument('-p', '--parallel', type=int, default=6,
+        help='How many students to fetch in parallel; default: 6')
     parser.add_argument('-A', '--all', action='store_true', default=False,
         help='show all projects, even the ones that are not supposed to have any further commits')
     parser.add_argument('module', nargs=1, choices=['pb', 'web', 'oopj', 'oopc', 'adv'],
@@ -117,15 +123,19 @@ if __name__ == '__main__':
             project_names = list(namer.cycle_names(week))
             printer.inter_header(project_names)
 
-            for student in students:
-                printer.student_cells(student["name"], student["github"])
+            for batch in batcher(students, args.parallel):
+                student2projects = {}
+                for student in batch:
+                    student2projects[student["github"]] = {prj:f'{prj}-{student["github"]}' for prj in project_names}
 
-                project2repo = {prj:f'{prj}-{student["github"]}' for prj in project_names}
-                student_repos_activity = process_batch(project2repo)
+                student_repos_activity = process_batch(student2projects)
 
-                # Display them in the order of the initial dict keys
-                for project, activity in student_repos_activity.items():
-                    printer.activity_cells(project2repo[project], activity)
+                # Display them in the order of the initial project names
+                for student in batch:
+                    printer.student_cells(student["name"], student["github"])
+                    for project, activity in student_repos_activity[student["github"]].items():
+                        printer.activity_cells(student2projects[student["github"]][project], activity)
+                    printer.flush_row()
 
-                printer.flush_row()
+            # empty line between weeks
             print()
