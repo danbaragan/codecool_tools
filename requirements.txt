@@ -20,6 +20,6 @@ PyJWT==1.7.1
 python-dotenv==0.15.0
 requests==2.25.1
 traitlets==5.0.5
-urllib3==1.26.2
+urllib3==1.26.3
 wcwidth==0.2.5
 wrapt==1.12.1
