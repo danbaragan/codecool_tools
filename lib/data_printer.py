@@ -127,7 +127,7 @@ class CsvPrinter(Printer):
 
     def module_line(self, name, week):
         self.module = name
-        self.week = week
+        self.week = week + 1
 
 
     # this is not an actual csv header, but a line that repeats every time week changes and thus project names
